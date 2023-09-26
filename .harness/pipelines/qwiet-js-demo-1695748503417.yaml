@@ -18,16 +18,10 @@ pipeline:
           execution:
             steps:
               - step:
-                  identifier: npminstall
-                  name: npm_install
-                  spec:
-                    command: npm install
-                  timeout: ""
-                  type: Run
-              - step:
                   identifier: dockerbuild
                   name: docker_build
                   spec:
+                    connectorRef: node
                     image: plugins/docker
                     settings:
                       dry_run: "true"
@@ -35,10 +29,59 @@ pipeline:
                       tags: latest
                   timeout: ""
                   type: Plugin
+              - step:
+                  identifier: npminstall
+                  name: npm_install
+                  spec:
+                    shell: Sh
+                    command: |
+                      npm install
+                      rm -rf node_modules
+                  timeout: ""
+                  type: Run
+              - step:
+                  type: Run
+                  name: apt update
+                  identifier: apt_update
+                  spec:
+                    shell: Sh
+                    command: apt update && apt install -y curl jq
+              - step:
+                  type: Run
+                  name: curl sl
+                  identifier: curl_sl
+                  spec:
+                    shell: Sh
+                    command: curl https://cdn.shiftleft.io/download/sl >/usr/local/bin/sl && chmod a+rx /usr/local/bin/sl
           platform:
-            arch: Amd64
             os: Linux
+            arch: Amd64
           runtime:
-            spec: {}
             type: Cloud
+            spec: {}
         type: CI
+    - stage:
+        name: PreZero Scan
+        identifier: PreZero_Scan
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: SL Analyze
+                  identifier: SL_Analyze
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          #!/bin/bash
+                          sl analyze --app HAR-Qwiet-js --container 18fgsa/s3-resource --js .
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10s
+        tags: {}
