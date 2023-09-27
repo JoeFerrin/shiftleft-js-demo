@@ -26,15 +26,31 @@ pipeline:
                   type: Run
               - step:
                   identifier: dockerbuild
-                  name: docker_build
+                  name: docker_build-NODE
                   spec:
+                    connectorRef: DockerNode
                     image: plugins/docker
                     settings:
-                      dry_run: "true"
-                      repo: hello/world
                       tags: latest
                   timeout: ""
                   type: Plugin
+                  description: Node.js Docker build
+                  when:
+                    stageStatus: Success
+              - step:
+                  type: Run
+                  name: CURL sl
+                  identifier: CURL_sl
+                  spec:
+                    shell: Sh
+                    command: curl https://cdn.shiftleft.io/download/sl > ${GITHUB_WORKSPACE}/sl && chmod a+rx ${GITHUB_WORKSPACE}/sl
+              - step:
+                  type: Run
+                  name: RUN sl analyze
+                  identifier: RUN_sl_analyze
+                  spec:
+                    shell: Sh
+                    command: sl analyze --app HAR-Qwiet-js-demo
           platform:
             arch: Amd64
             os: Linux
